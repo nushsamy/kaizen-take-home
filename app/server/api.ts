@@ -26,19 +26,6 @@ const parseAndValidateTimeRange = (startTime: string, endTime: string) => {
   return { start, end };
 };
 
-const calculateTotalPrice = (
-  start: DateTime,
-  end: DateTime,
-  hourlyRateCents: number,
-) => {
-  const durationInHours = end.diff(start, "hours").hours || 0;
-
-  return {
-    totalPriceCents: hourlyRateCents * durationInHours,
-    hourlyRateCents,
-    durationInHours,
-  };
-};
 
 const validateReservationAndGetVehicle = (input: {
   vehicleId: string;
@@ -156,12 +143,13 @@ function getReservation(id: string) {
 }
 
 export interface QuoteResult {
-  totalPriceCents: number;
   hourlyRateCents: number;
+  totalPriceCents: number;
   durationInHours: number;
   discountType: DiscountType | null;
   savingsCents: number;
   discountedTotalCents: number;
+  discountedHourlyRateCents: number;
 }
 
 function getQuote(input: {
@@ -170,14 +158,12 @@ function getQuote(input: {
   endTime: string;
 }): QuoteResult {
   const { vehicle, start, end } = validateReservationAndGetVehicle(input);
-  const basePricing = calculateTotalPrice(start, end, vehicle.hourly_rate_cents);
   const discount = getApplicableDiscount(
     start.toJSDate(),
     end.toJSDate(),
     vehicle.hourly_rate_cents,
-    basePricing.totalPriceCents,
   );
-  return { ...basePricing, ...discount };
+  return { hourlyRateCents: vehicle.hourly_rate_cents, ...discount };
 }
 
 export const API = {

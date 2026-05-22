@@ -1,3 +1,9 @@
+const MS_PER_HOUR = 1000 * 60 * 60;
+const MS_PER_DAY = MS_PER_HOUR * 24;
+const MULTIDAY_DISCOUNT_THRESHOLD_DAYS = 3;
+const MULTIDAY_DISCOUNT_PER_HOUR_CENTS = 1000; // $10/hr
+const HOLIDAY_DISCOUNT_RATE = 0.17; // 17% off
+
 export const HOLIDAYS: Array<{ month: number; day: number }> = [
   { month: 1,  day: 21 },
   { month: 2,  day: 12 },
@@ -14,9 +20,12 @@ export const HOLIDAYS: Array<{ month: number; day: number }> = [
 export type DiscountType = "holiday" | "multiday";
 
 export interface DiscountResult {
+  totalPriceCents: number;
+  durationInHours: number;
   discountType: DiscountType | null;
   savingsCents: number;
   discountedTotalCents: number;
+  discountedHourlyRateCents: number;
 }
 
 function hasHolidayInRange(start: Date, end: Date): boolean {
@@ -43,10 +52,9 @@ export function getApplicableDiscount(
   start: Date,
   end: Date,
   hourlyRateCents: number,
-  originalTotalCents: number,
 ): DiscountResult {
-  const durationHours =
-    (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+  const durationHours = (end.getTime() - start.getTime()) / MS_PER_HOUR;
+  const originalTotalCents = Math.round(hourlyRateCents * durationHours);
 
   const startMidnight = new Date(
     start.getFullYear(), start.getMonth(), start.getDate(),
@@ -55,16 +63,16 @@ export function getApplicableDiscount(
     end.getFullYear(), end.getMonth(), end.getDate(),
   );
   const calendarDays =
-    (endMidnight.getTime() - startMidnight.getTime()) / (1000 * 60 * 60 * 24);
+    (endMidnight.getTime() - startMidnight.getTime()) / MS_PER_DAY;
 
   const holidayApplies = hasHolidayInRange(start, end);
   const holidaySavings = holidayApplies
-    ? Math.round(originalTotalCents * 0.17)
+    ? Math.round(originalTotalCents * HOLIDAY_DISCOUNT_RATE)
     : 0;
 
-  const multidayApplies = calendarDays > 3;
+  const multidayApplies = calendarDays > MULTIDAY_DISCOUNT_THRESHOLD_DAYS;
   const multidaySavings = multidayApplies
-    ? Math.min(Math.round(1000 * durationHours), originalTotalCents)
+    ? Math.min(Math.round(MULTIDAY_DISCOUNT_PER_HOUR_CENTS * durationHours), originalTotalCents)
     : 0;
 
   let discountType: DiscountType | null = null;
@@ -80,9 +88,19 @@ export function getApplicableDiscount(
     savingsCents = multidaySavings;
   }
 
+  const discountedHourlyRateCents =
+    discountType === "holiday"
+      ? Math.round(hourlyRateCents * (1 - HOLIDAY_DISCOUNT_RATE))
+      : discountType === "multiday"
+        ? hourlyRateCents - MULTIDAY_DISCOUNT_PER_HOUR_CENTS
+        : hourlyRateCents;
+
   return {
+    totalPriceCents: originalTotalCents,
+    durationInHours: durationHours,
     discountType,
     savingsCents,
     discountedTotalCents: originalTotalCents - savingsCents,
+    discountedHourlyRateCents,
   };
 }

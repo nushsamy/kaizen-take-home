@@ -23,14 +23,10 @@ export function VehicleListItem({
 
   const imgData = useBase64Image(vehicle.thumbnail_url);
 
-  const durationHours =
-    (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60);
-  const originalTotalCents = Math.round(vehicle.hourly_rate_cents * durationHours);
   const discount = getApplicableDiscount(
     startDateTime,
     endDateTime,
     vehicle.hourly_rate_cents,
-    originalTotalCents,
   );
 
   return (
@@ -66,26 +62,18 @@ export function VehicleListItem({
       </div>
       <div className="md:ml-auto text-center md:text-right flex flex-col justify-center mt-4 md:mt-0">
         {discount.discountType !== null ? (
-          (() => {
-            const discountedRateCents =
-              discount.discountType === "holiday"
-                ? Math.round(vehicle.hourly_rate_cents * 0.83)
-                : vehicle.hourly_rate_cents - 1000;
-            return (
-              <>
-                <p className="text-xl font-bold text-green-700">
-                  {formatCents(discountedRateCents)}
-                  <span className="text-sm font-normal ml-0.5">/hr</span>
-                </p>
-                <p className="text-sm text-gray-400 line-through">
-                  {formatCents(vehicle.hourly_rate_cents)}/hr
-                </p>
-                <span className="inline-block mt-0.5 text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                  {discount.discountType === "holiday" ? "Holiday discount" : "Multi-day discount"}
-                </span>
-              </>
-            );
-          })()
+          <>
+            <p className="text-xl font-bold text-green-700">
+              {formatCents(discount.discountedHourlyRateCents)}
+              <span className="text-sm font-normal ml-0.5">/hr</span>
+            </p>
+            <p className="text-sm text-gray-400 line-through">
+              {formatCents(vehicle.hourly_rate_cents)}/hr
+            </p>
+            <span className="inline-block mt-0.5 text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+              {discount.discountType === "holiday" ? "Holiday discount" : "Multi-day discount"}
+            </span>
+          </>
         ) : (
           <p className="text-xl font-bold">
             {formatCents(vehicle.hourly_rate_cents)}
