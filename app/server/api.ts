@@ -108,6 +108,7 @@ export interface FilterOptions {
   passengerCounts: number[];
 }
 
+//fetch all vehicles and filter to find max and min price
 function getPriceRange(): { minDollars: number; maxDollars: number } {
   const allVehicles = getVehicles();
   const rates = allVehicles.map((v) => v.hourly_rate_cents);

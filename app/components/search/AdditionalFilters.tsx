@@ -37,12 +37,14 @@ export function AdditionalFilters({
             <div className="flex w-full items-baseline justify-between mb-4">
               <FormLabel>Price</FormLabel>
               <div className="text-sm">
+              //add + if slider is at max value possible
                 {formatDollars(minPrice)} to{" "}
                 {maxPrice === priceRange.maxDollars ? `${formatDollars(maxPrice)}+` : formatDollars(maxPrice)}
               </div>
             </div>
             <FormControl>
               <RangeSlider
+              //dynamically setting min and max based on overall dataset
                 min={priceRange.minDollars}
                 max={priceRange.maxDollars}
                 step={10}
