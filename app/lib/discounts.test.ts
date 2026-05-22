@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getApplicableDiscount } from "./discounts";
+import { getApplicableDiscount, getDiscountLabel } from "./discounts";
 
 const RATE_45 = 4500;  // $45/hr — holiday saves more than multiday
 const RATE_32 = 3200;  // $32/hr — multiday saves more than holiday
@@ -153,5 +153,19 @@ describe("pricing arithmetic", () => {
     expect(result.discountedHourlyRateCents).toBe(discountedRate);
     expect(result.discountedTotalCents).toBe(Math.round(discountedRate * 120));
     expect(result.savingsCents).toBe(result.totalPriceCents - result.discountedTotalCents);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getDiscountLabel
+// ---------------------------------------------------------------------------
+
+describe("getDiscountLabel", () => {
+  it('returns "Holiday discount" for holiday', () => {
+    expect(getDiscountLabel("holiday")).toBe("Holiday discount");
+  });
+
+  it('returns "Multi-day discount" for multiday', () => {
+    expect(getDiscountLabel("multiday")).toBe("Multi-day discount");
   });
 });

@@ -1,4 +1,4 @@
-import { getApplicableDiscount } from "@/lib/discounts";
+import { getApplicableDiscount, getDiscountLabel } from "@/lib/discounts";
 import { formatCents } from "@/lib/formatters";
 import { Vehicle } from "@/server/data";
 import { useBase64Image } from "@/util/useBase64Image";
@@ -71,7 +71,7 @@ export function VehicleListItem({
               {formatCents(vehicle.hourly_rate_cents)}/hr
             </p>
             <span className="inline-block mt-0.5 text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-              {discount.discountType === "holiday" ? "Holiday discount" : "Multi-day discount"}
+              {getDiscountLabel(discount.discountType)}
             </span>
           </>
         ) : (

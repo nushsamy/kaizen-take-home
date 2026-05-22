@@ -4,6 +4,7 @@ import { VehicleDetails } from "@/components/review/VehicleDetails";
 import { ErrorFallback } from "@/components/shared/ErrorFallback";
 import { Button } from "@/components/shared/ui/button";
 import { Separator } from "@/components/shared/ui/separator";
+import { getDiscountLabel } from "@/lib/discounts";
 import { formatCents } from "@/lib/formatters";
 import { API, type QuoteResult } from "@/server/api";
 import { format, formatDuration, intervalToDuration } from "date-fns";
@@ -104,9 +105,7 @@ function Content() {
                 </div>
                 <div>
                   <dt className="text-sm text-gray-600">
-                    {quote.discountType === "holiday"
-                      ? "Holiday Discount"
-                      : "Multi-Day Discount"}
+                    {getDiscountLabel(quote.discountType)}
                   </dt>
                   <dd className="text-lg font-medium text-green-700">
                     -{formatCents(quote.savingsCents)}

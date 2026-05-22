@@ -28,6 +28,11 @@ export interface DiscountResult {
   discountedHourlyRateCents: number;
 }
 
+/** Returns the human-readable label for a discount type. */
+export function getDiscountLabel(discountType: DiscountType): string {
+  return discountType === "holiday" ? "Holiday discount" : "Multi-day discount";
+}
+
 /** Strips the time component from a date, returning local midnight. */
 function toMidnight(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
