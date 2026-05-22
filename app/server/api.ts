@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { getApplicableDiscount, DiscountType } from "@/lib/discounts";
 import {
   getAvailableVehicles,
   getReservationById,
@@ -154,13 +155,29 @@ function getReservation(id: string) {
   return reservation;
 }
 
+export interface QuoteResult {
+  totalPriceCents: number;
+  hourlyRateCents: number;
+  durationInHours: number;
+  discountType: DiscountType | null;
+  savingsCents: number;
+  discountedTotalCents: number;
+}
+
 function getQuote(input: {
   vehicleId: string;
   startTime: string;
   endTime: string;
-}) {
+}): QuoteResult {
   const { vehicle, start, end } = validateReservationAndGetVehicle(input);
-  return calculateTotalPrice(start, end, vehicle.hourly_rate_cents);
+  const basePricing = calculateTotalPrice(start, end, vehicle.hourly_rate_cents);
+  const discount = getApplicableDiscount(
+    start.toJSDate(),
+    end.toJSDate(),
+    vehicle.hourly_rate_cents,
+    basePricing.totalPriceCents,
+  );
+  return { ...basePricing, ...discount };
 }
 
 export const API = {

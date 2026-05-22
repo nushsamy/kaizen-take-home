@@ -5,7 +5,7 @@ import { ErrorFallback } from "@/components/shared/ErrorFallback";
 import { Button } from "@/components/shared/ui/button";
 import { Separator } from "@/components/shared/ui/separator";
 import { formatCents } from "@/lib/formatters";
-import { API } from "@/server/api";
+import { API, type QuoteResult } from "@/server/api";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { useSearchParams } from "next/navigation";
 import { ErrorBoundary } from "react-error-boundary";
@@ -53,7 +53,7 @@ function Content() {
 
   const vehicle = API.getVehicle(id);
 
-  const quote = API.getQuote({
+  const quote: QuoteResult = API.getQuote({
     vehicleId: id,
     startTime: startDate.toISOString(),
     endTime: endDate.toISOString(),
@@ -94,12 +94,39 @@ function Content() {
               <dt className="text-sm text-gray-600">Duration</dt>
               <dd>{formattedDuration}</dd>
             </div>
-            <div>
-              <dt className="text-sm text-gray-600">Total Cost</dt>
-              <dd className="text-2xl font-medium tracking-tight">
-                {formatCents(quote.totalPriceCents)}
-              </dd>
-            </div>
+            {quote.discountType !== null ? (
+              <>
+                <div>
+                  <dt className="text-sm text-gray-600">Original Total</dt>
+                  <dd className="text-xl line-through text-gray-400">
+                    {formatCents(quote.totalPriceCents)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-600">
+                    {quote.discountType === "holiday"
+                      ? "Holiday Discount"
+                      : "Multi-Day Discount"}
+                  </dt>
+                  <dd className="text-lg font-medium text-green-700">
+                    -{formatCents(quote.savingsCents)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-600">Total Cost</dt>
+                  <dd className="text-2xl font-medium tracking-tight text-green-800">
+                    {formatCents(quote.discountedTotalCents)}
+                  </dd>
+                </div>
+              </>
+            ) : (
+              <div>
+                <dt className="text-sm text-gray-600">Total Cost</dt>
+                <dd className="text-2xl font-medium tracking-tight">
+                  {formatCents(quote.totalPriceCents)}
+                </dd>
+              </div>
+            )}
           </dl>
 
           <Timeline startDate={startDate} endDate={endDate} />
