@@ -108,6 +108,15 @@ export interface FilterOptions {
   passengerCounts: number[];
 }
 
+function getPriceRange(): { minDollars: number; maxDollars: number } {
+  const allVehicles = getVehicles();
+  const rates = allVehicles.map((v) => v.hourly_rate_cents);
+  return {
+    minDollars: Math.floor(Math.min(...rates) / 100),
+    maxDollars: Math.ceil(Math.max(...rates) / 100),
+  };
+}
+
 function getFilterOptions(): FilterOptions {
   const allVehicles = getVehicles();
 
@@ -156,6 +165,7 @@ function getQuote(input: {
 export const API = {
   searchVehicles,
   getFilterOptions,
+  getPriceRange,
   getVehicle,
   getReservation,
   getQuote,

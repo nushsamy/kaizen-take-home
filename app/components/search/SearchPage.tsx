@@ -25,6 +25,7 @@ export function SearchPage() {
   );
 
   const filterOptions = API.getFilterOptions();
+  const priceRange = API.getPriceRange();
 
   // Initialize form with default values
   const form = useForm<FormValues>({
@@ -36,7 +37,7 @@ export function SearchPage() {
       minPassengers: 1,
       classification: filterOptions.classifications,
       make: filterOptions.makes,
-      price: [10, 100],
+      price: [priceRange.minDollars, priceRange.maxDollars],
     },
   });
 
@@ -44,7 +45,7 @@ export function SearchPage() {
     <ErrorBoundary
       fallback={<ErrorFallback message="Failed to load filters" />}
     >
-      <AdditionalFilters filterOptions={filterOptions} />
+      <AdditionalFilters filterOptions={filterOptions} priceRange={priceRange} />
     </ErrorBoundary>
   );
 

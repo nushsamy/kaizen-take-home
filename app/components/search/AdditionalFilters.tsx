@@ -13,7 +13,13 @@ import { formatDollars } from "@/lib/formatters.tsx";
 import { FilterOptions } from "@/server/api";
 import { useFormContext } from "react-hook-form";
 
-export function AdditionalFilters({ filterOptions }: { filterOptions: FilterOptions }) {
+export function AdditionalFilters({
+  filterOptions,
+  priceRange,
+}: {
+  filterOptions: FilterOptions;
+  priceRange: { minDollars: number; maxDollars: number };
+}) {
   const form = useFormContext<FormValues>();
 
   const price = form.watch("price");
@@ -32,13 +38,13 @@ export function AdditionalFilters({ filterOptions }: { filterOptions: FilterOpti
               <FormLabel>Price</FormLabel>
               <div className="text-sm">
                 {formatDollars(minPrice)} to{" "}
-                {maxPrice === 100 ? "$100+" : formatDollars(maxPrice)}
+                {maxPrice === priceRange.maxDollars ? `${formatDollars(maxPrice)}+` : formatDollars(maxPrice)}
               </div>
             </div>
             <FormControl>
               <RangeSlider
-                min={10}
-                max={100}
+                min={priceRange.minDollars}
+                max={priceRange.maxDollars}
                 step={10}
                 value={field.value}
                 onValueChange={field.onChange}
@@ -137,8 +143,8 @@ export function AdditionalFilters({ filterOptions }: { filterOptions: FilterOpti
         disabled={
           form.getValues().minPassengers === 1 &&
           form.getValues().make === undefined &&
-          form.getValues().price[0] === 10 &&
-          form.getValues().price[1] === 100
+          form.getValues().price[0] === priceRange.minDollars &&
+          form.getValues().price[1] === priceRange.maxDollars
         }
       >
         Reset all
