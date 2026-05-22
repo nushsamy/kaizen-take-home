@@ -66,27 +66,15 @@ export function getApplicableDiscount(
     (endMidnight.getTime() - startMidnight.getTime()) / MS_PER_DAY;
 
   const holidayApplies = hasHolidayInRange(start, end);
-  const holidaySavings = holidayApplies
-    ? Math.round(originalTotalCents * HOLIDAY_DISCOUNT_RATE)
-    : 0;
-
   const multidayApplies = calendarDays > MULTIDAY_DISCOUNT_THRESHOLD_DAYS;
-  const multidaySavings = multidayApplies
-    ? Math.min(Math.round(MULTIDAY_DISCOUNT_PER_HOUR_CENTS * durationHours), originalTotalCents)
-    : 0;
 
-  let discountType: DiscountType | null = null;
-  let savingsCents = 0;
-
-  if (holidaySavings === 0 && multidaySavings === 0) {
-    // no discount
-  } else if (holidaySavings >= multidaySavings) {
-    discountType = "holiday";
-    savingsCents = holidaySavings;
-  } else {
-    discountType = "multiday";
-    savingsCents = multidaySavings;
-  }
+  // Compare per-hour savings to pick the better discount (duration cancels out)
+  const holidayPerHourSavings = hourlyRateCents * HOLIDAY_DISCOUNT_RATE;
+  const discountType: DiscountType | null =
+    !holidayApplies && !multidayApplies ? null
+    : holidayApplies && !multidayApplies ? "holiday"
+    : !holidayApplies && multidayApplies ? "multiday"
+    : holidayPerHourSavings >= MULTIDAY_DISCOUNT_PER_HOUR_CENTS ? "holiday" : "multiday";
 
   const discountedHourlyRateCents =
     discountType === "holiday"
@@ -95,12 +83,18 @@ export function getApplicableDiscount(
         ? hourlyRateCents - MULTIDAY_DISCOUNT_PER_HOUR_CENTS
         : hourlyRateCents;
 
+  const discountedTotalCents =
+    discountType === "holiday"
+      ? Math.round(originalTotalCents * (1 - HOLIDAY_DISCOUNT_RATE))
+      : Math.round(discountedHourlyRateCents * durationHours);
+  const savingsCents = originalTotalCents - discountedTotalCents;
+
   return {
     totalPriceCents: originalTotalCents,
     durationInHours: durationHours,
     discountType,
     savingsCents,
-    discountedTotalCents: originalTotalCents - savingsCents,
+    discountedTotalCents,
     discountedHourlyRateCents,
   };
 }
