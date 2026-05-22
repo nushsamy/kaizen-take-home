@@ -37,7 +37,7 @@ export function AdditionalFilters({
             <div className="flex w-full items-baseline justify-between mb-4">
               <FormLabel>Price</FormLabel>
               <div className="text-sm">
-              //add + if slider is at max value possible
+              {/* add + if slider is at max value possible */}
                 {formatDollars(minPrice)} to{" "}
                 {maxPrice === priceRange.maxDollars ? `${formatDollars(maxPrice)}+` : formatDollars(maxPrice)}
               </div>
