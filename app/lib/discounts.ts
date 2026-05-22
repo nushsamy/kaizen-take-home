@@ -28,19 +28,25 @@ export interface DiscountResult {
   discountedHourlyRateCents: number;
 }
 
+/** Strips the time component from a date, returning local midnight. */
+function toMidnight(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/**
+ * Returns true if any holiday falls strictly between start and end,
+ * exclusive of both boundary calendar days.
+ */
 function hasHolidayInRange(start: Date, end: Date): boolean {
-  const startYear = start.getFullYear();
-  const endYear = end.getFullYear();
+  const startDay = toMidnight(start);
+  const endDay = toMidnight(end);
 
-  const startMidnight = new Date(startYear, start.getMonth(), start.getDate());
-  const endMidnight = new Date(endYear, end.getMonth(), end.getDate());
+  if (endDay <= startDay) return false;
 
-  if (endMidnight <= startMidnight) return false;
-
-  for (let year = startYear; year <= endYear; year++) {
+  for (let year = startDay.getFullYear(); year <= endDay.getFullYear(); year++) {
     for (const { month, day } of HOLIDAYS) {
       const holidayDate = new Date(year, month - 1, day);
-      if (holidayDate > startMidnight && holidayDate < endMidnight) {
+      if (holidayDate > startDay && holidayDate < endDay) {
         return true;
       }
     }
@@ -48,6 +54,28 @@ function hasHolidayInRange(start: Date, end: Date): boolean {
   return false;
 }
 
+/**
+ * Picks the discount type that saves the most per hour.
+ * Returns null if neither discount applies.
+ */
+function selectDiscountType(
+  holidayApplies: boolean,
+  multidayApplies: boolean,
+  hourlyRateCents: number,
+): DiscountType | null {
+  if (!holidayApplies && !multidayApplies) return null;
+  if (holidayApplies && !multidayApplies) return "holiday";
+  if (!holidayApplies) return "multiday";
+  // Both apply — pick whichever saves more per hour (duration cancels out)
+  return hourlyRateCents * HOLIDAY_DISCOUNT_RATE >= MULTIDAY_DISCOUNT_PER_HOUR_CENTS
+    ? "holiday"
+    : "multiday";
+}
+
+/**
+ * Computes pricing for a reservation and determines the best applicable
+ * discount, returning the full breakdown including discounted rate and total.
+ */
 export function getApplicableDiscount(
   start: Date,
   end: Date,
@@ -56,25 +84,14 @@ export function getApplicableDiscount(
   const durationHours = (end.getTime() - start.getTime()) / MS_PER_HOUR;
   const originalTotalCents = Math.round(hourlyRateCents * durationHours);
 
-  const startMidnight = new Date(
-    start.getFullYear(), start.getMonth(), start.getDate(),
-  );
-  const endMidnight = new Date(
-    end.getFullYear(), end.getMonth(), end.getDate(),
-  );
-  const calendarDays =
-    (endMidnight.getTime() - startMidnight.getTime()) / MS_PER_DAY;
+  const startDay = toMidnight(start);
+  const endDay = toMidnight(end);
+  const calendarDays = (endDay.getTime() - startDay.getTime()) / MS_PER_DAY;
 
   const holidayApplies = hasHolidayInRange(start, end);
   const multidayApplies = calendarDays > MULTIDAY_DISCOUNT_THRESHOLD_DAYS;
 
-  // Compare per-hour savings to pick the better discount (duration cancels out)
-  const holidayPerHourSavings = hourlyRateCents * HOLIDAY_DISCOUNT_RATE;
-  const discountType: DiscountType | null =
-    !holidayApplies && !multidayApplies ? null
-    : holidayApplies && !multidayApplies ? "holiday"
-    : !holidayApplies && multidayApplies ? "multiday"
-    : holidayPerHourSavings >= MULTIDAY_DISCOUNT_PER_HOUR_CENTS ? "holiday" : "multiday";
+  const discountType = selectDiscountType(holidayApplies, multidayApplies, hourlyRateCents);
 
   const discountedHourlyRateCents =
     discountType === "holiday"
@@ -87,6 +104,7 @@ export function getApplicableDiscount(
     discountType === "holiday"
       ? Math.round(originalTotalCents * (1 - HOLIDAY_DISCOUNT_RATE))
       : Math.round(discountedHourlyRateCents * durationHours);
+
   const savingsCents = originalTotalCents - discountedTotalCents;
 
   return {
